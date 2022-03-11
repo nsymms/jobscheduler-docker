@@ -1,0 +1,65 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: jsched
+      POSTGRES_PASSWORD: jsched
+      POSTGRES_DB: jobscheduler
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - db:/var/lib/postgresql/data
+
+  controller:
+    image: sosberlin/js7:controller-2-2-3
+    # hostname: control
+    # we're local inside docker-compose, so no need to expose ports
+    # ports:
+    #   - 4444:4444
+    environment:
+      - RUN_JS_JAVA_OPTIONS=-Xmx256m
+      - RUN_JS_ID=jobscheduler
+      - RUN_JS_USER_ID=1000:1000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - controller:/var/sos-berlin.com/js7/controller/var
+      # - ./config/controller/private:/var/sos-berlin.com/js7/controller/var/config/private
+
+  joc:
+    image: sosberlin/js7:joc-2-2-3
+    hostname: joc1
+    depends_on:
+      - db
+    ports:
+    - 4446:4446
+    environment:
+      - RUN_JS_JAVA_OPTIONS=-Xmx256m
+      - RUN_JS_USER_ID=1000:1000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # since the alpine bash is broken, we must use a modified script here
+      - ./config/jetty.sh:/opt/sos-berlin.com/js7/joc/jetty/bin/jetty.sh:ro
+      # database configuration
+      - ./config/hibernate.cfg.xml:/var/sos-berlin.com/js7/joc/resources/joc/hibernate.cfg.xml:ro
+      # - ./config:/var/sos-berlin.com/js7/joc/resources/joc
+      - ./logs:/var/log/sos-berlin.com/js7/joc
+  
+  # a local agent.  There can be others, remote ones too.
+  agent:
+    image: sosberlin/js7:agent-2-2-3
+    # hostname: worker-one
+    ports:
+    - 4445:4445
+    environment:
+      - RUN_JS_JAVA_OPTIONS=-Xmx256m
+      - RUN_JS_USER_ID=1000:1000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - agent:/var/sos-berlin.com/js7/agent/var_4445
+
+volumes:
+  db:
+  controller:
+  agent:
