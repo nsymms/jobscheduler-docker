@@ -1,7 +1,6 @@
-# ** Work in Progress **
 # Docker setup of SOS Berlin's JobScheduler
 
-I'm using stock docker images from SOS Berlin and the official PostgresSQL image.  All taken from DockerHub.
+_Note:_ I'm using stock docker images from [SOS Berlin](https://hub.docker.com/r/sosberlin/js7) and the official PostgresSQL image.  All taken from DockerHub.
 
 So here I've put together a docker-compose version of a simple setup that contains the database, JOC, Controller, and one agent.  I'd like to make a Kubernetes cluster / helm chart setup some day so that there could be agent and controller scaling, but that's a later project.
 
@@ -11,18 +10,24 @@ So here I've put together a docker-compose version of a simple setup that contai
 - **IMPORTANT**: The compose file uses docker volumes instead of simple local directories. This is used because there is pre-defined setup data inside the container images. When mounting a new empty volume, the container's contents at that mount point are copied into the new volume. The container then mounts and uses the volume. This initial data copy is **NOT** performed when using bind mounts (local directories & files).
 
 ### How to run this setup:
+- Clone or Check out or Copy this repository (you only need the `config` directory and the `docker-compose.yml` file):
+```
+git clone https://github.com/nsymms/jobscheduler-docker.git
+```
 - Edit `config/hibernate.cfg.xml` and set db name/user/pass. Make sure it matches what's listed in `docker-compose.yml` for the postgresql service.
 - Before first startup, the database must be initialized.  So do this:
 ```
+# start the database
 docker-compose up db -d
+# run the db setup script
 docker-compose run --rm --entrypoint "/bin/sh -c /opt/sos-berlin.com/js7/joc/install/joc_install_tables.sh" joc
-# Once complete, to start the full container set:
+# start the full container set:
 docker-compose up -d
 ```
 
-- At first start, browse to the JOC at http://localhost:4446. The user / password is `root` / `root`.
+- After starting the containers, browse to the JOC at http://localhost:4446. The user / password is `root` / `root`.
 - You will be prompted to attach the controller and agent. The controller URL is http://controller:4444. Once you've submitted that, the controller window will display and you'll need to add the agent. Click on the `...` and then "Add single agent". The agent url is http://agent:4445.
 - After that is set up, you can navigate to the dashboard.
 
-Further documentation for JobScheduler can be found at the SOS Berlin website here: https://kb.sos-berlin.com/display/PKB/JS7
+Complete documentation for JobScheduler can be found at the SOS Berlin [website](https://kb.sos-berlin.com/display/PKB/JS7). You might want to download and explore some [example jobs](https://download.sos-berlin.com/JobScheduler.2.0/Examples.tar.gz) or look at the [tutorials](https://kb.sos-berlin.com/display/PKB/Tutorials).
 
